@@ -116,7 +116,7 @@ class ProductController extends AbstractController
             }
         }
 
-        // Mise à jour des autres champs
+        // updating fields
         $product->setName($data['code'] ?? $product->getCode());
         $product->setName($data['name'] ?? $product->getName());
         $product->setImage($data['image'] ?? null);
