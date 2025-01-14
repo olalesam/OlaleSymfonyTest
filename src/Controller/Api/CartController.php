@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\CartRepository;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Security;
+use App\Service\JsonResponseHelper;
 
 #[Route('/api/products')]
 class CartController extends AbstractController
@@ -21,12 +22,14 @@ class CartController extends AbstractController
     private Security $security;
     private CartRepository $cartRepository;
     private $entityManager; 
+    private USer $user;
 
     public function __construct(EntityManagerInterface $entityManager,Security $security, CartRepository $cartRepository)
     {
         $this->security = $security;
         $this->cartRepository = $cartRepository;
         $this->entityManager = $entityManager;
+        $this->user = $this->security->getUser();
     }
     
     #[Route('/add', name: 'cart_add', methods: ['POST'])]
@@ -97,36 +100,32 @@ class CartController extends AbstractController
     #[Route('/deleteCart', name: 'delete_cart', methods: ['POST'])]
     public function removeFromCart(Request $request): JsonResponse
     {
-        // Récupérer l'utilisateur connecté
-        $user = $this->security->getUser();
-
-        if (!$user) {
-            return new JsonResponse(['error' => 'Utilisateur non authentifié'], 401);
+        if (!$this->user) {
+            return JsonResponseHelper::unauthorized('user not identify');
         }
 
-        // Décoder la requête JSON pour récupérer l'ID du produit
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['productId'])) {
-            return new JsonResponse(['error' => 'ID du produit manquant'], 400);
+            return JsonResponseHelper::forbidden('ID not found');
         }
 
-        // Récupérer le produit
+        // get product
         $product = $this->entityManager->getRepository(Product::class)->find($data['productId']);
         
         if (!$product) {
-            return new JsonResponse(['error' => 'Produit non trouvé'], 404);
+            return JsonResponseHelper::forbidden('Product not found');
         }
 
-        // Récupérer le panier de l'utilisateur
-        $cart = $this->entityManager->getRepository(Cart::class)->findOneBy(['user' => $user]);
+        // get cart of user
+        $cart = $this->entityManager->getRepository(Cart::class)->findOneBy(['user' => $this->user]);
         
 
         if (!$cart) {
-            return new JsonResponse(['error' => 'Panier non trouvé'], 404);
+            return JsonResponseHelper::forbidden('Cart not found');
         }
 
-        // Vérifier si le produit est dans le panier
+        // checking if product exist in cart
         if ($cart->getProducts()->contains($product)) {
             
             try {
@@ -148,35 +147,31 @@ class CartController extends AbstractController
             } 
 
         } else {
-            return new JsonResponse(['error' => 'Produit non trouvé dans le panier'], 404);
+            return JsonResponseHelper::forbidden('Product not found in cart');
         }
     }
     
     #[Route('/cart/details', name: 'cart_details', methods: ['GET'])]
     public function getCartDetails(EntityManagerInterface $entityManager): JsonResponse
     {
-        // Récupérer l'utilisateur connecté
-        $user = $this->security->getUser();  // Récupère l'utilisateur connecté
-
-        // Vérifiez si l'utilisateur est connecté
-        if (!$user instanceof User) {
+    
+        if (!$this->user instanceof User) {
             return new JsonResponse(['error' => 'Utilisateur non authentifié'], 401);
         }
 
-        $entityManager->initializeObject($user);
-        $userId = $user->getId();
+        $entityManager->initializeObject($this->user);
+        $userId = $this->user->getId();
        
-        // Vérifier si l'utilisateur a déjà un panier
+        // check if user have Cart
 
         $cart = $this->cartRepository->findByUserId($userId);
 
-        // Préparer les détails du panier
         $cartDetails = [
             'cart_id' => $cart->getId(),
             'user_id' => $cart->getUser()->getId(),
             'products' => []
         ];
-        // Ajouter les détails des produits
+        // add cart details 
         foreach ($cart->getProducts() as $product) {
             $cartDetails['products'][] = [
                 'id' => $product->getId(),

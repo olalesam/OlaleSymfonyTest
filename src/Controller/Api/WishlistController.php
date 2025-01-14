@@ -68,23 +68,20 @@ class WishlistController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
-        //$user = $this->security->getUser();  // Récupère l'utilisateur connecté
-
-        // Vérifiez si l'utilisateur est connecté
+        // checking if user is connected
         if (!$this->user instanceof User) {
             return JsonResponseHelper::unauthorized('user not identify');
         }
 
-        // Vérifiez si le produit existe
+        // check if product exist
         $product = $entityManager->getRepository(Product::class)->find($data['productId']);
         if (!$product) {
             return JsonResponseHelper::forbidden('Product not fount');
         }
 
         $entityManager->initializeObject($this->user);
-        //$userId = $user->getId();
 
-        // Crée une nouvelle wishlist s'il n'en a pas
+        // create wishlist if not exist
         if ($this->user->getWishlists()->isEmpty()) {
             $wishlist = new Wishlist();
             $this->user->addWishlist($wishlist);
@@ -103,49 +100,42 @@ class WishlistController extends AbstractController
     {
 
         if (!$this->user) {
-            return new JsonResponse(['error' => 'Utilisateur non authentifié'], 401);
+            return JsonResponseHelper::unauthorized('user not autorize');
         }
 
         if ($productId === null) {
-            return new JsonResponse(['error' => 'Product ID is required'], 400);
+            return JsonResponseHelper::error('Product ID is required');
         }
 
-        // Récupérer le produit
+        // get product
         $product = $this->entityManager->getRepository(Product::class)->find($productId);
         
         if (!$product) {
-            return new JsonResponse(['error' => 'Produit non trouvé'], 404);
+            return JsonResponseHelper::forbidden('Product ID not found');
         }
 
-        // Récupérer le panier de l'utilisateur
+        // get wishlist of user
         $wishlist = $this->entityManager->getRepository(Wishlist::class)->findOneBy(['user' => $this->user]);
         
         if (!$wishlist) {
-            return new JsonResponse(['error' => 'Aucune liste d\'envie trouvée'], 404);
+            return JsonResponseHelper::forbidden('List not found');
         }
 
         if ($wishlist->getProducts()->contains($product)) {   // check if product exist in the Wishlist
             
             try {
-                // Supprimer le produit du panier
+                // delete product of wishlist
                 $wishlist->getProducts()->removeElement($product); // delete product to Wishlist 
                 
                 $this->entityManager->flush();  // Persist data
-                return $this->json([
-                    
-                    'status' => 'success',
-                    'message' => 'Produit supprimé du panier',
-                ]);
+                return JsonResponseHelper::success([],'product deleted success');
             } 
             catch (\Exception $e) {
-                return $this->json([
-                    'status' => 'error',
-                    'message' => 'Error: ' . $e->getMessage(),
-                ]);
+                return JsonResponseHelper::error('Error: ' . $e->getMessage());
             } 
 
         } else {
-            return new JsonResponse(['error' => 'Produit non trouvé dans le wishlist'], 404);
+            return JsonResponseHelper::forbidden('Produit not in wishlist');
         }
     }
 }

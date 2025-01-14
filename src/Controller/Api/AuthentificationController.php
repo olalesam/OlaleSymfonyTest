@@ -13,10 +13,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTManager;  // Directement utilisé
-
 use App\Entity\User;
+use App\Service\JsonResponseHelper;
 
 #[Route('/api/')]
 class AuthentificationController extends AbstractController
@@ -28,7 +26,7 @@ class AuthentificationController extends AbstractController
     public function __construct(
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
-        JWTTokenManagerInterface $jwtManager  // Injection de l'interface JWTTokenManagerInterface
+        JWTTokenManagerInterface $jwtManager  // inject interface JWTTokenManagerInterface
     )
     {
         $this->entityManager = $entityManager;
@@ -46,20 +44,18 @@ class AuthentificationController extends AbstractController
         
 
         if (!$email || !$password) {
-            return new JsonResponse(['error' => 'Email and password are required.'], 400);
+             return JsonResponseHelper::forbidden('Email and possword are required');
         }
     
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
-        dump($data);
-        die(); // Facultatif si tu veux arrêter l'exécution
         
         if (!$user || !$this->passwordHasher->isPasswordValid($user, $password)) {
-            return new JsonResponse(['error' => 'Invalid credentials.'], 401);
+            return JsonResponseHelper::unauthorized('Invalid credentials.');
         }
     
-        // Génération du token JWT si les identifiants sont valides
+        // generate token if identifiant is ok
         $jwt = $this->jwtManager->create($user);
-        return new JsonResponse(['token' => $jwt]);
+        return JsonResponseHelper::success(['token' => $jwt], 'token is generated');
     }
 
     #[Route('account', name: 'app_account', methods: ['POST'])]
@@ -83,14 +79,11 @@ class AuthentificationController extends AbstractController
                                     try {
                                         $em->persist($user);
                                         $em->flush();
-                                        
-                                        return new JsonResponse(['status' => 'success', 'message' => 'User added successfully.'], 200);
+
+                                        return JsonResponseHelper::success([], 'User added successfully.');
                                     } 
                                     catch (\Exception $e) {
-                                        return $this->json([
-                                            'status' => 'error',
-                                            'message' => 'Error: ' . $e->getMessage(),
-                                        ]);
+                                        return JsonResponseHelper::exceptionMessage('Error: ' . $e->getMessage());
                                     }
                             
                                 }

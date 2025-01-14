@@ -38,4 +38,9 @@ class JsonResponseHelper
     {
         return self::error($message, 404);
     }
+
+    public static function exceptionMessage(string $message): JsonResponse
+    {
+        return self::error($message, 400);
+    }
 }

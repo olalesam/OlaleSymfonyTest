@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Product;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Security;
+use App\Service\JsonResponseHelper;
 
 #[Route('/api/products')]
 class ProductController extends AbstractController
@@ -32,15 +33,14 @@ class ProductController extends AbstractController
     #[Route('/new', name: 'product_new', methods: ['POST'])]
     public function addProduct(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
-        // Dans ta méthode addProduct
+        // addProduct
         if (!$this->isAdmin()) {
-            return $this->json(['status' => 'error', 'message' => 'Access denied.']);
+            return JsonResponseHelper::unauthorized('Access denied');
         }
         // create product entity
         $data = json_decode($request->getContent(), true);
 
-        // Vérifier si le champ "code" est vide
-        // Vérification des champs obligatoires
+        // checking fields
         $requiredFields = ['code', 'name', 'category', 'price', 'quantity', 'internalReference', 'inventoryStatus'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
@@ -70,8 +70,7 @@ class ProductController extends AbstractController
         // Validation inputs parameters
         $errors = $validator->validate($product);
 
-        if (count($errors) > 0) {
-            // Show errors messages
+        if (count($errors) > 0) { // Show errors messages
             return $this->json([
                 'status' => 'error',
                 'message' => (string) $errors,
@@ -81,10 +80,7 @@ class ProductController extends AbstractController
         try {
             $entityManager->persist($product);
             $entityManager->flush();
-            return $this->json([
-                'status' => 'success',
-                'message' => 'Product added successfully.',
-            ]);
+            return JsonResponseHelper::success([], 'product add success');
         } 
         catch (\Exception $e) {
             return $this->json([
@@ -104,11 +100,11 @@ class ProductController extends AbstractController
     {
         $product = $entityManager->getRepository(Product::class)->find($id);
         if (!$product) {
-            return $this->json(['status' => 'error', 'message' => 'Product not found.']);
+            return JsonResponseHelper::forbidden('Product not found.');
         }
     
         if (!$this->isAdmin()) {
-            return $this->json(['status' => 'error', 'message' => 'Access denied.']);
+            return JsonResponseHelper::unauthorized('Access denied');
         }
     
         $data = json_decode($request->getContent(), true);
@@ -117,12 +113,11 @@ class ProductController extends AbstractController
     
         $errors = $validator->validate($product);
         if (count($errors) > 0) {
-            return $this->json(['status' => 'error', 'message' => (string) $errors]);
+            return JsonResponseHelper::error((string) $errors);
         }
     
         $entityManager->flush();
-    
-        return $this->json(['status' => 'success', 'message' => 'Product updated successfully']);
+        return JsonResponseHelper::success([],(string) 'Product updated successfully');
     }
 
     #[Route('/{id}', name: 'product_delete', methods: ['DELETE'])]
@@ -131,18 +126,17 @@ class ProductController extends AbstractController
     ): Response
     {
         if (!$this->isAdmin()) {
-            return $this->json(['status' => 'error', 'message' => 'Access denied.']);
+            return JsonResponseHelper::unauthorized('Access denied.');
         }
 
         $product = $entityManager->getRepository(Product::class)->find($id);
         if (!$product) {
-            return $this->json(['status' => 'error', 'message' => 'Product not found.']);
+            return JsonResponseHelper::forbidden('Product not found.');
         }
 
         $entityManager->remove($product);
         $entityManager->flush();
-
-        return $this->json(['status' => 'success', 'message' => 'Product deleted successfully']);
+        return JsonResponseHelper::success([],'Product deleted successfully');
     }
 
 
