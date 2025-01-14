@@ -16,7 +16,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\Security;
 use App\Service\JsonResponseHelper;
 
-#[Route('/api/products')]
+#[Route('/api/cart')]
 class CartController extends AbstractController
 {
     private Security $security;
@@ -37,50 +37,37 @@ class CartController extends AbstractController
     EntityManagerInterface $entityManager): JsonResponse
     {
 
-        
-        $user = $this->security->getUser();  // Récupère l'utilisateur connecté
-
-        // Vérifiez si l'utilisateur est connecté
-        if (!$user instanceof User) {
-            return new JsonResponse(['error' => 'Utilisateur non authentifié'], 401);
+        // checking if user is connected
+        if (!$this->user instanceof User) {
+            return JsonResponseHelper::unauthorized('user not identify');
         }
 
         $data = json_decode($request->getContent(), true);
         
-        // Vérifiez si le produit existe
+        // checking if product exist
         $product = $entityManager->getRepository(Product::class)->find($data['productId']);
         if (!$product) {
-            return new JsonResponse(['error' => 'Produit non trouvé'], 404);
+            return JsonResponseHelper::forbidden('Product not found');
         }
-
-        // Vérifier si l'utilisateur a déjà un panier
-        //$cart = $user->getCarts()->first();
         
-        
-        $entityManager->initializeObject($user);
-        $userId = $user->getId();
+        $entityManager->initializeObject($this->user);
+        $userId = $this->user->getId();
        
-        // Vérifier si l'utilisateur a déjà un panier
+        // checking fid user have cart
 
         $cart = $this->cartRepository->findByUserId($userId);
     
         if (!$cart) {
-            // Si l'utilisateur n'a pas de panier, créer un nouveau panier
             $cart = new Cart();
-            $cart->setUser($user);
-            $user->addCart($cart);
+            $cart->setUser($this->user);
+            $this->user->addCart($cart);
         }
 
         try {
-            //dump($product);
             $cart->addProduct($product);
             $entityManager->persist($cart);
             $entityManager->flush();
-            return $this->json([
-                
-                'status' => 'success',
-                'message' => 'Product added successfully.',
-            ]);
+            return JsonResponseHelper::success([],'Product added successfully.');
         } 
         catch (\Exception $e) {
             return $this->json([
@@ -89,15 +76,12 @@ class CartController extends AbstractController
             ]);
         }
         
-        // Ajouter le produit au panier
+        // add product in cart
         
-
-        return new JsonResponse(['message' => 'Produit ajouté au panier']);
-        
-        
+        return JsonResponseHelper::success([],'Product added successfully in cart.');    
     }
 
-    #[Route('/deleteCart', name: 'delete_cart', methods: ['POST'])]
+    #[Route('/delete', name: 'delete_cart', methods: ['POST'])]
     public function removeFromCart(Request $request): JsonResponse
     {
         if (!$this->user) {
@@ -129,21 +113,13 @@ class CartController extends AbstractController
         if ($cart->getProducts()->contains($product)) {
             
             try {
-                // Supprimer le produit du panier
                 $cart->getProducts()->removeElement($product);
-                // Persister les changements dans la base de données
+
                 $this->entityManager->flush();
-                return $this->json([
-                    
-                    'status' => 'success',
-                    'message' => 'Produit supprimé du panier',
-                ]);
+                return JsonResponseHelper::success([],'Product removed on cart');
             } 
             catch (\Exception $e) {
-                return $this->json([
-                    'status' => 'error',
-                    'message' => 'Error: ' . $e->getMessage(),
-                ]);
+                return JsonResponseHelper::error('Error: ' . $e->getMessage());
             } 
 
         } else {
@@ -151,12 +127,12 @@ class CartController extends AbstractController
         }
     }
     
-    #[Route('/cart/details', name: 'cart_details', methods: ['GET'])]
+    #[Route('/details', name: 'cart_details', methods: ['GET'])]
     public function getCartDetails(EntityManagerInterface $entityManager): JsonResponse
     {
     
         if (!$this->user instanceof User) {
-            return new JsonResponse(['error' => 'Utilisateur non authentifié'], 401);
+            return JsonResponseHelper::unauthorized('user not identify');
         }
 
         $entityManager->initializeObject($this->user);

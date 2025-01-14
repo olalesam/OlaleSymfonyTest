@@ -92,7 +92,7 @@ class WishlistController extends AbstractController
         $wishlist->addProduct($product);
         $entityManager->persist($wishlist);
         $entityManager->flush();
-        return JsonResponseHelper::success(['id' => $product], 'Product is saved');
+        return JsonResponseHelper::success([], 'Product is saved');
     }
 
     #[Route('/delete/{productId}', name: 'wishlist_remove', methods: ['DELETE'])]
