@@ -32,10 +32,10 @@ class Product
     private $description;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $image;
+    private $image = null;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $category;
+    private $category = null;
 
     #[ORM\Column(type: 'integer')]
     #[Assert\NotBlank(message: "the price is required")]
@@ -140,25 +140,25 @@ class Product
 
         return $this;
     }
-    public function setImage(string $image): self
+    public function setImage(?string $image): self
     {
         $this->image = $image;
 
         return $this;
     }
-    public function setCategory(string $category): self
+    public function setCategory(?string $category): self
     {
         $this->category = $category;
 
         return $this;
     }
-    public function setPrice(int $price): self
+    public function setPrice(?int $price): self
     {
         $this->price = $price; 
 
         return $this;
     }
-    public function setQuantity(int $quantity): self
+    public function setQuantity(?int $quantity): self
     {
         $this->quantity = $quantity;
 
@@ -170,7 +170,7 @@ class Product
 
         return $this;
     }
-    public function setShellId(int $shellId): self
+    public function setShellId(?int $shellId): self
     {
         $this->shellId = $shellId;
 

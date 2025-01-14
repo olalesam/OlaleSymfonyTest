@@ -58,11 +58,11 @@ class ProductController extends AbstractController
         $product->setName($data['name']);
         $product->setImage(isset($data['image']) ? $data['image'] : null);
         $product->setDescription(isset($data['description']) ? $data['description'] : null);
-        $product->setCategory($data['category']);
-        $product->setPrice($data['price']);
-        $product->setQuantity($data['quantity']);
-        $product->setInternalReference($data['internalReference']);
-        $product->setInventoryStatus($data['inventoryStatus']);
+        $product->setCategory($data['category'] ? $data['category'] : null);
+        $product->setPrice($data['price'] ? $data['price'] : 0);
+        $product->setQuantity($data['quantity'] ? $data['quantity'] : 0);
+        $product->setInternalReference($data['internalReference'] ? $data['internalReference'] : null);
+        $product->setInventoryStatus($data['inventoryStatus'] ? $data['inventoryStatus'] : null);
         $product->setShellId(isset($data['shellId']) ? $data['shellId'] : 0);
         $product->setRating(isset($data['rating']) ? $data['rating'] : 0);
         $product->onPrePersist();
@@ -96,29 +96,49 @@ class ProductController extends AbstractController
         Request $request, 
         EntityManagerInterface $entityManager, 
         ValidatorInterface $validator
-    ): Response
-    {
+    ): Response {
         $product = $entityManager->getRepository(Product::class)->find($id);
         if (!$product) {
             return JsonResponseHelper::forbidden('Product not found.');
         }
-    
+
         if (!$this->isAdmin()) {
             return JsonResponseHelper::unauthorized('Access denied');
         }
-    
+
         $data = json_decode($request->getContent(), true);
+
+        // check if code is using by another product
+        if (isset($data['code']) && $data['code'] !== $product->getCode()) {
+            $existingProduct = $entityManager->getRepository(Product::class)->findOneBy(['code' => $data['code']]);
+            if ($existingProduct) {
+                return JsonResponseHelper::error('The code is already in use by another product.');
+            }
+        }
+
+        // Mise à jour des autres champs
+        $product->setName($data['code'] ?? $product->getCode());
         $product->setName($data['name'] ?? $product->getName());
-        $product->setPrice($data['price'] ?? $product->getPrice());
-    
+        $product->setImage($data['image'] ?? null);
+        $product->setDescription($data['description'] ?? null);
+        $product->setCategory($data['category'] ?? null);
+        $product->setPrice($data['price'] ?? 0);
+        $product->setQuantity($data['quantity'] ?? 0);
+        $product->setInternalReference($data['internalReference'] ?? null);
+        $product->setInventoryStatus($data['inventoryStatus'] ?? null);
+        $product->setShellId($data['shellId'] ?? 0);
+        $product->setRating($data['rating'] ?? 0);
+        $product->onPrePersist();
+
         $errors = $validator->validate($product);
         if (count($errors) > 0) {
             return JsonResponseHelper::error((string) $errors);
         }
-    
+
         $entityManager->flush();
-        return JsonResponseHelper::success([],(string) 'Product updated successfully');
+        return JsonResponseHelper::success([], 'Product updated successfully');
     }
+
 
     #[Route('/{id}', name: 'product_delete', methods: ['DELETE'])]
     public function deleteProduct(int $id, 
