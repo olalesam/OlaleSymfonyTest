@@ -14,15 +14,12 @@ class Cart
     #[ORM\Column]
     private ?int $id = null;
 
-        // Lien avec l'utilisateur
-       // Produits dans le panier
-
-    // Définition de la relation ManyToOne avec User
+    // Define relationship ManyToOne with User
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: "user_id", referencedColumnName: "id", nullable: false)]
     private ?User $user = null;
 
-    // Produits dans le panier
+    // Products of cart
     #[ORM\ManyToMany(targetEntity: Product::class)]
     #[ORM\JoinTable(name: "cart_products")]
     private Collection $products;
@@ -32,7 +29,7 @@ class Cart
         $this->products = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
-    // Getter et Setter pour les propriétés
+    // Getter et Setter 
     public function getId(): ?int
     {
         return $this->id;

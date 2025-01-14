@@ -136,15 +136,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    // Cart et Wishlist
-
-    // Getter pour Carts
+    // Getter for Carts
     public function getCarts(): Collection
     {
         return $this->carts;
     }
 
-    // Ajouter un Cart
+    // add Cart
     public function addCart(Cart $cart): void
     {
         if (!$this->carts->contains($cart)) {
@@ -153,7 +151,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
     }
 
-    // Supprimer un Cart
+    // remove Cart
     public function removeCart(Cart $cart): void
     {
         if ($this->carts->removeElement($cart)) {
@@ -163,13 +161,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
     }
 
-    // Getter pour Wishlists
+    // Getter for Wishlists
     public function getWishlists(): Collection
     {
         return $this->wishlists;
     }
 
-    // Ajouter un Wishlist
+    // Add Wishlist
     public function addWishlist(Wishlist $wishlist): void
     {
         if (!$this->wishlists->contains($wishlist)) {
@@ -178,7 +176,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
     }
 
-    // Supprimer un Wishlist
+    // remove un Wishlist
     public function removeWishlist(Wishlist $wishlist): void
     {
         if ($this->wishlists->removeElement($wishlist)) {

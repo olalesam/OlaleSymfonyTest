@@ -10,7 +10,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ORM\Table(name: 'products')] 
 #[ORM\UniqueConstraint(name: 'unique_code', columns: ['code'])]
-#[ORM\HasLifecycleCallbacks]  // Ajout de l'attribut HasLifecycleCallbacks
+#[ORM\HasLifecycleCallbacks]  // Add attribut HasLifecycleCallbacks
 class Product
 {
     #[ORM\Id]

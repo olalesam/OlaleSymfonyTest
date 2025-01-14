@@ -24,8 +24,8 @@ class CartRepository extends ServiceEntityRepository
     public function findByUserId(int $userId): ?Cart
     {
         return $this->createQueryBuilder('c')
-            ->innerJoin('c.user', 'u') // Jointure avec l'utilisateur
-            ->where('u.id = :userId') // Utilisation de l'ID de l'utilisateur
+            ->innerJoin('c.user', 'u') 
+            ->where('u.id = :userId') 
             ->setParameter('userId', $userId)
             ->getQuery()
             ->getOneOrNullResult();
